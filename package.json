@@ -1,0 +1,22 @@
+{
+  "name": "foodrescue-platform",
+  "version": "1.0.0",
+  "description": "Full-Stack Surplus Food Redistribution Platform",
+  "private": true,
+  "scripts": {
+    "build:frontend": "npm --prefix frontend install && npm --prefix frontend run build",
+    "start:donation": "npm --prefix food-donation-service start",
+    "start:request": "npm --prefix food-request-service start",
+    "install:all": "npm --prefix food-donation-service install && npm --prefix food-request-service install && npm --prefix frontend install"
+  },
+  "keywords": [
+    "foodrescue",
+    "microservices",
+    "react",
+    "vite",
+    "express",
+    "mongodb"
+  ],
+  "author": "",
+  "license": "ISC"
+}

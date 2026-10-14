@@ -1,0 +1,59 @@
+# =============================================================================
+# Render Blueprint (render.yaml)
+# Full-Stack FoodRescue Microservices Infrastructure
+# Docs: https://render.com/docs/blueprint-spec
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # 1. Food Donation Service (Microservice 1: Auth, Donations, Inventory)
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: food-donation-service
+    runtime: node
+    plan: free
+    region: oregon
+    rootDir: food-donation-service
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        sync: false # Add your MongoDB Atlas connection string in Render Dashboard
+      - key: JWT_SECRET
+        generateValue: true # Render automatically generates a cryptographically secure 256-bit secret
+      - key: JWT_EXPIRES_IN
+        value: 7d
+
+  # ---------------------------------------------------------------------------
+  # 2. Food Request & Matching Service (Microservice 2: Requests, Notifications)
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: food-request-service
+    runtime: node
+    plan: free
+    region: oregon
+    rootDir: food-request-service
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGODB_URI
+        sync: false # Add your MongoDB Atlas connection string in Render Dashboard
+      - key: JWT_SECRET
+        fromService:
+          type: web
+          name: food-donation-service
+          envVarKey: JWT_SECRET # Shares the same JWT key as Service 1 for seamless token verification
+      - key: DONATION_SERVICE_URL
+        sync: false # Set to https://food-donation-service.onrender.com (or your Render URL)
