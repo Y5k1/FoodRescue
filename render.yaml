@@ -24,9 +24,9 @@ services:
       - key: PORT
         value: 10000
       - key: MONGODB_URI
-        sync: false # Add your MongoDB Atlas connection string in Render Dashboard
+        sync: false
       - key: JWT_SECRET
-        generateValue: true # Render automatically generates a cryptographically secure 256-bit secret
+        sync: false
       - key: JWT_EXPIRES_IN
         value: 7d
 
@@ -49,11 +49,8 @@ services:
       - key: PORT
         value: 10000
       - key: MONGODB_URI
-        sync: false # Add your MongoDB Atlas connection string in Render Dashboard
+        sync: false
       - key: JWT_SECRET
-        fromService:
-          type: web
-          name: food-donation-service
-          envVarKey: JWT_SECRET # Shares the same JWT key as Service 1 for seamless token verification
+        sync: false
       - key: DONATION_SERVICE_URL
-        sync: false # Set to https://food-donation-service.onrender.com (or your Render URL)
+        sync: false
