@@ -1,0 +1,310 @@
+{
+  "info": {
+    "name": "FoodRescue Microservices API Collection",
+    "description": "Comprehensive Postman collection for FoodRescue: Food Donation Service (:5001) & Food Request and Matching Service (:5002)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "donationUrl",
+      "value": "http://localhost:5001"
+    },
+    {
+      "key": "requestUrl",
+      "value": "http://localhost:5002"
+    },
+    {
+      "key": "authToken",
+      "value": ""
+    },
+    {
+      "key": "donationId",
+      "value": ""
+    },
+    {
+      "key": "requestId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Health Checks",
+      "item": [
+        {
+          "name": "Service 1 Health (Donations :5001)",
+          "request": {
+            "method": "GET",
+            "url": "{{donationUrl}}/health"
+          }
+        },
+        {
+          "name": "Service 2 Health (Requests :5002)",
+          "request": {
+            "method": "GET",
+            "url": "{{requestUrl}}/health"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Authentication (Service 1)",
+      "item": [
+        {
+          "name": "Register Supplier",
+          "request": {
+            "method": "POST",
+            "url": "{{donationUrl}}/api/auth/register",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Chef Raymond\",\n  \"email\": \"chef@hyatt.com\",\n  \"password\": \"password123\",\n  \"confirmPassword\": \"password123\",\n  \"role\": \"supplier\",\n  \"organizationName\": \"Grand Hyatt Catering\",\n  \"phone\": \"+1 (555) 019-9922\",\n  \"location\": \"Downtown Hotel District\",\n  \"accountType\": \"Catering\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "url": "{{donationUrl}}/api/auth/login",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"chef@hyatt.com\",\n  \"password\": \"password123\",\n  \"role\": \"supplier\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Current Profile (Me)",
+          "request": {
+            "method": "GET",
+            "url": "{{donationUrl}}/api/auth/me",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Food Donation Service (Port 5001)",
+      "item": [
+        {
+          "name": "Get Donation Stats",
+          "request": {
+            "method": "GET",
+            "url": "{{donationUrl}}/api/donations/stats"
+          }
+        },
+        {
+          "name": "Get Available Donations",
+          "request": {
+            "method": "GET",
+            "url": "{{donationUrl}}/api/donations/available"
+          }
+        },
+        {
+          "name": "List All Donations",
+          "request": {
+            "method": "GET",
+            "url": "{{donationUrl}}/api/donations"
+          }
+        },
+        {
+          "name": "Create Surplus Donation",
+          "request": {
+            "method": "POST",
+            "url": "{{donationUrl}}/api/donations",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"foodName\": \"Grilled Chicken & Roasted Potatoes\",\n  \"category\": \"Cooked Food\",\n  \"dietaryTag\": \"Non-Vegetarian\",\n  \"donorType\": \"Catering\",\n  \"quantity\": 80,\n  \"unit\": \"Meals\",\n  \"donorName\": \"Grand Hyatt Catering\",\n  \"location\": \"Downtown Hotel District\",\n  \"contactPhone\": \"+1 (555) 019-9922\",\n  \"shelfLifeHours\": 12,\n  \"description\": \"Hot packaged trays in catering warmers\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Get Donation by ID",
+          "request": {
+            "method": "GET",
+            "url": "{{donationUrl}}/api/donations/{{donationId}}"
+          }
+        },
+        {
+          "name": "Safe Reserve Donation (Internal / Service 2 REST)",
+          "request": {
+            "method": "PATCH",
+            "url": "{{donationUrl}}/api/donations/{{donationId}}/reserve",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"requestId\": \"{{requestId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Reserve Surplus Quantity (Concurrency-Safe)",
+          "request": {
+            "method": "PATCH",
+            "url": "{{donationUrl}}/api/donations/{{donationId}}/reserve-quantity",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 25,\n  \"requestId\": \"{{requestId}}\",\n  \"supplierId\": \"{{supplierId}}\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Release Surplus Quantity",
+          "request": {
+            "method": "PATCH",
+            "url": "{{donationUrl}}/api/donations/{{donationId}}/release-quantity",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"quantity\": 25\n}"
+            }
+          }
+        },
+        {
+          "name": "Release Reservation (Rollback)",
+          "request": {
+            "method": "PATCH",
+            "url": "{{donationUrl}}/api/donations/{{donationId}}/release"
+          }
+        },
+        {
+          "name": "Mark Donation Collected",
+          "request": {
+            "method": "PATCH",
+            "url": "{{donationUrl}}/api/donations/{{donationId}}/collect"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Food Request & Matching Service (Port 5002)",
+      "item": [
+        {
+          "name": "Get Request Stats",
+          "request": {
+            "method": "GET",
+            "url": "{{requestUrl}}/api/requests/stats"
+          }
+        },
+        {
+          "name": "List All Requests",
+          "request": {
+            "method": "GET",
+            "url": "{{requestUrl}}/api/requests",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }]
+          }
+        },
+        {
+          "name": "Create Targeted Food Request",
+          "request": {
+            "method": "POST",
+            "url": "{{requestUrl}}/api/requests",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"donationId\": \"{{donationId}}\",\n  \"quantity\": 25,\n  \"organizationName\": \"Downtown Community Shelter\",\n  \"peopleCount\": 30,\n  \"location\": \"450 Pine Street\",\n  \"contactPhone\": \"+1 (555) 012-7788\",\n  \"neededBy\": \"2026-10-15T18:00:00Z\",\n  \"description\": \"Hot meals for evening distribution\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Accept Food Request (Supplier Review)",
+          "request": {
+            "method": "POST",
+            "url": "{{requestUrl}}/api/requests/{{requestId}}/accept",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pickupInstructions\": \"Please collect from back kitchen entrance before 6 PM.\",\n  \"decisionNote\": \"Approved with full quantity reserved.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Reject Food Request (Supplier Review)",
+          "request": {
+            "method": "POST",
+            "url": "{{requestUrl}}/api/requests/{{requestId}}/reject",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{authToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"rejectionReason\": \"Capacity constraint or logistics conflict.\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Fulfill Food Request",
+          "request": {
+            "method": "POST",
+            "url": "{{requestUrl}}/api/requests/{{requestId}}/fulfill",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }]
+          }
+        },
+        {
+          "name": "Cancel Food Request",
+          "request": {
+            "method": "POST",
+            "url": "{{requestUrl}}/api/requests/{{requestId}}/cancel",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }]
+          }
+        },
+        {
+          "name": "Get Live Event Stream Logs",
+          "request": {
+            "method": "GET",
+            "url": "{{requestUrl}}/api/requests/events"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Notifications Center (Port 5002)",
+      "item": [
+        {
+          "name": "Get Notifications",
+          "request": {
+            "method": "GET",
+            "url": "{{requestUrl}}/api/notifications",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }]
+          }
+        },
+        {
+          "name": "Get Unread Count",
+          "request": {
+            "method": "GET",
+            "url": "{{requestUrl}}/api/notifications/unread-count",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }]
+          }
+        },
+        {
+          "name": "Mark Notification Read",
+          "request": {
+            "method": "PATCH",
+            "url": "{{requestUrl}}/api/notifications/{{notificationId}}/read",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }]
+          }
+        },
+        {
+          "name": "Mark All Notifications Read",
+          "request": {
+            "method": "PATCH",
+            "url": "{{requestUrl}}/api/notifications/read-all",
+            "header": [{ "key": "Authorization", "value": "Bearer {{authToken}}" }]
+          }
+        }
+      ]
+    }
+  ]
+}
