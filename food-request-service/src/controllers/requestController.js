@@ -3,8 +3,84 @@ const FoodRequest = require("../models/FoodRequest");
 const Notification = require("../models/Notification");
 const { validateAndSanitizePhone } = require("../utils/phoneValidator");
 
-const donationServiceUrl =
-    process.env.DONATION_SERVICE_URL || "http://localhost:5001";
+// Clean and sanitize service URLs
+const sanitizeUrl = (url) => {
+    if (!url) return "";
+    return url.trim().replace(/\/+$/, "").replace(/\/api$/, "");
+};
+
+// Known active production Food Donation Service on Render
+const KNOWN_DONATION_SVC = "https://foodrescue-h3hs.onrender.com";
+
+// Resolve candidate URLs to try for Food Donation Service
+const getDonationServiceUrls = () => {
+    const rawEnv = process.env.DONATION_SERVICE_URL;
+    const candidates = [];
+
+    if (rawEnv) {
+        const cleaned = sanitizeUrl(rawEnv);
+        // Exclude the placeholder if it's the dead example from docs
+        if (cleaned && !cleaned.includes("foodrescue-donation-service.onrender.com")) {
+            candidates.push(cleaned);
+        }
+    }
+
+    // Always include known production Render service if not already present
+    if (!candidates.includes(KNOWN_DONATION_SVC)) {
+        candidates.push(KNOWN_DONATION_SVC);
+    }
+
+    // Include localhost fallback for local development
+    if (process.env.NODE_ENV !== "production" && !candidates.includes("http://localhost:5001")) {
+        candidates.push("http://localhost:5001");
+    }
+
+    return candidates;
+};
+
+// Resilient dispatcher for inter-service REST calls to Food Donation Service
+const callDonationService = async ({ method = "get", path, data, timeout = 10000 }) => {
+    const candidateUrls = getDonationServiceUrls();
+    let lastError = null;
+
+    for (const baseUrl of candidateUrls) {
+        try {
+            const url = `${baseUrl}${path}`;
+            console.log(`[Food-Request-Svc] Dispatching ${method.toUpperCase()} ${url}`);
+            const res = await axios({
+                method,
+                url,
+                data,
+                timeout
+            });
+            return {
+                success: true,
+                data: res.data?.data !== undefined ? res.data.data : res.data,
+                baseUrl
+            };
+        } catch (err) {
+            lastError = err;
+            console.warn(`[Food-Request-Svc] Attempt ${method.toUpperCase()} ${baseUrl}${path} failed: ${err.message} (status: ${err.response?.status})`);
+
+            // If the donation service explicitly responded with JSON "Donation not found",
+            // don't try other URLs, because this service DID respond and confirmed it's missing in DB
+            if (err.response?.status === 404 && err.response?.data?.message === "Donation not found") {
+                return {
+                    success: false,
+                    notFound: true,
+                    message: "The requested food donation was not found."
+                };
+            }
+        }
+    }
+
+    return {
+        success: false,
+        unavailable: true,
+        error: lastError,
+        message: `Food Donation Service is unavailable or unreachable (attempted: ${candidateUrls.join(", ")}). Error: ${lastError?.message || "connection failed"}`
+    };
+};
 
 // Live REST API Event Log buffer for UI live stream
 const eventLogs = [
@@ -92,15 +168,15 @@ exports.createRequest = async (req, res, next) => {
             });
         }
 
-        // 1. Fetch the exact donation from Food Donation Service (Port 5001)
-        let donation;
-        try {
-            const donRes = await axios.get(`${donationServiceUrl}/api/donations/${donationId}`, {
-                timeout: 5000
-            });
-            donation = donRes.data?.data || donRes.data;
-        } catch (donErr) {
-            if (donErr.response?.status === 404) {
+        // 1. Fetch the exact donation from Food Donation Service
+        const donCall = await callDonationService({
+            method: "get",
+            path: `/api/donations/${donationId}`,
+            timeout: 10000
+        });
+
+        if (!donCall.success) {
+            if (donCall.notFound) {
                 return res.status(404).json({
                     success: false,
                     message: "The requested food donation was not found."
@@ -108,9 +184,11 @@ exports.createRequest = async (req, res, next) => {
             }
             return res.status(503).json({
                 success: false,
-                message: "Food Donation Service is unavailable. Please verify Service 1 is running."
+                message: donCall.message
             });
         }
+
+        const donation = donCall.data;
 
         // 2. Validate donation availability and expiry
         if (donation.status === "Reserved" || donation.status === "Collected" || donation.status === "Expired") {
@@ -373,35 +451,35 @@ exports.acceptRequest = async (req, res, next) => {
         }
 
         // 3. Perform concurrency-safe quantity reservation via REST call to Service 1
-        let reserveResponse;
-        try {
-            reserveResponse = await axios.patch(
-                `${donationServiceUrl}/api/donations/${request.donationId}/reserve-quantity`,
-                {
-                    quantity: request.quantity,
-                    requestId: request._id.toString(),
-                    supplierId: req.user.id
-                },
-                { timeout: 6000 }
-            );
-        } catch (resErr) {
+        const reserveCall = await callDonationService({
+            method: "patch",
+            path: `/api/donations/${request.donationId}/reserve-quantity`,
+            data: {
+                quantity: request.quantity,
+                requestId: request._id.toString(),
+                supplierId: req.user.id
+            },
+            timeout: 10000
+        });
+
+        if (!reserveCall.success) {
             logEvent(
                 "Donation-Svc",
-                `PATCH /api/donations/${request.donationId}/reserve-quantity failed (${resErr.response?.status || resErr.code})`
+                `PATCH /api/donations/${request.donationId}/reserve-quantity failed`
             );
-            if (resErr.response) {
-                return res.status(resErr.response.status).json({
+            if (reserveCall.error?.response?.data?.message) {
+                return res.status(reserveCall.error.response.status || 400).json({
                     success: false,
-                    message: resErr.response.data?.message || "Failed to reserve surplus quantity. Donation may be expired or already claimed."
+                    message: reserveCall.error.response.data.message
                 });
             }
             return res.status(503).json({
                 success: false,
-                message: "Food Donation Service is currently unreachable at port 5001. Reservation aborted."
+                message: reserveCall.message || "Failed to reserve surplus quantity. Donation service unreachable."
             });
         }
 
-        const updatedDonation = reserveResponse.data?.data;
+        const updatedDonation = reserveCall.data;
 
         // 4. Update request status to Accepted
         try {
@@ -473,11 +551,12 @@ exports.acceptRequest = async (req, res, next) => {
         } catch (saveError) {
             // ROLLBACK: Release the reserved quantity back in Service 1
             try {
-                await axios.patch(
-                    `${donationServiceUrl}/api/donations/${request.donationId}/release-quantity`,
-                    { quantity: request.quantity },
-                    { timeout: 5000 }
-                );
+                await callDonationService({
+                    method: "patch",
+                    path: `/api/donations/${request.donationId}/release-quantity`,
+                    data: { quantity: request.quantity },
+                    timeout: 8000
+                });
                 logEvent(
                     "Matching-Engine-Svc",
                     `ROLLBACK: Released ${request.quantity} ${request.unit} on donation ${request.donationId} after failure`
@@ -624,11 +703,12 @@ exports.cancelRequest = async (req, res, next) => {
         // If it was already accepted, release the quantity back to Service 1
         if (request.status === "Accepted" && request.donationId) {
             try {
-                await axios.patch(
-                    `${donationServiceUrl}/api/donations/${request.donationId}/release-quantity`,
-                    { quantity: request.quantity },
-                    { timeout: 5000 }
-                );
+                await callDonationService({
+                    method: "patch",
+                    path: `/api/donations/${request.donationId}/release-quantity`,
+                    data: { quantity: request.quantity },
+                    timeout: 8000
+                });
             } catch (err) {
                 console.error("Failed to release quantity on cancellation:", err.message);
             }
@@ -699,3 +779,5 @@ exports.getEventLogs = (req, res) => {
         data: eventLogs
     });
 };
+
+exports.getDonationServiceUrls = getDonationServiceUrls;

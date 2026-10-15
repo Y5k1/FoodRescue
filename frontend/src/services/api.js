@@ -1,21 +1,26 @@
 import axios from "axios";
 
-const DONATION_BASE_URL = import.meta.env.VITE_DONATION_API_URL || "http://localhost:5001";
-const REQUEST_BASE_URL = import.meta.env.VITE_REQUEST_API_URL || "http://localhost:5002";
+const sanitizeApiUrl = (url, defaultUrl) => {
+    const raw = (url || defaultUrl || "").trim();
+    return raw.replace(/\/+$/, "").replace(/\/api$/, "");
+};
 
-// Instance for Food Donation Service (port 5001)
+const DONATION_BASE_URL = sanitizeApiUrl(import.meta.env.VITE_DONATION_API_URL, "http://localhost:5001");
+const REQUEST_BASE_URL = sanitizeApiUrl(import.meta.env.VITE_REQUEST_API_URL, "http://localhost:5002");
+
+// Instance for Food Donation Service (port 5001) - 30s timeout handles Render free-tier wakeups
 export const donationApi = axios.create({
     baseURL: DONATION_BASE_URL,
-    timeout: 8000,
+    timeout: 30000,
     headers: {
         "Content-Type": "application/json"
     }
 });
 
-// Instance for Food Request & Matching Service (port 5002)
+// Instance for Food Request & Matching Service (port 5002) - 30s timeout handles Render free-tier wakeups
 export const requestApi = axios.create({
     baseURL: REQUEST_BASE_URL,
-    timeout: 8000,
+    timeout: 30000,
     headers: {
         "Content-Type": "application/json"
     }

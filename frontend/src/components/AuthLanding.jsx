@@ -85,14 +85,15 @@ export const AuthLanding = ({ onExploreDemo }) => {
                 setViewMode(selectedRole === "supplier" ? "donor" : "receiver");
             } else {
                 // Login
-                await login({
+                const res = await login({
                     email: formData.email,
                     password: formData.password,
                     role: selectedRole
                 });
 
-                addToast("Signed in successfully!", "success");
-                setViewMode(selectedRole === "supplier" ? "donor" : "receiver");
+                const effectiveRole = res?.user?.role || selectedRole;
+                addToast(res?.message || `Signed in successfully as ${effectiveRole === "supplier" ? "Food Supplier" : "Food Requester"}!`, "success");
+                setViewMode(effectiveRole === "supplier" ? "donor" : "receiver");
             }
         } catch (err) {
             console.error("Auth error:", err);

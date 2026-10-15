@@ -113,10 +113,10 @@ You can deploy using either **Option A (Render Blueprint - Recommended)** or **O
    | `PORT` | `10000` | Port provided by Render |
    | `MONGODB_URI` | `mongodb+srv://.../FoodRescueRequests?...` | Atlas DB 2 URI |
    | `JWT_SECRET` | *(Same secret as Service 1)* | Must match Service 1 for auth |
-   | `DONATION_SERVICE_URL` | `https://foodrescue-donation-service.onrender.com` | Service 1 Render URL |
+   | `DONATION_SERVICE_URL` | `https://foodrescue-h3hs.onrender.com` | Your deployed Service 1 Render URL (no trailing slash) |
 6. Click **Create Web Service**.
 7. Once deployed, note down your Render URL, e.g.:
-   `https://foodrescue-request-service.onrender.com`
+   `https://foodrescue-1-msbm.onrender.com`
 
 ---
 
@@ -135,12 +135,11 @@ You can deploy using either **Option A (Render Blueprint - Recommended)** or **O
 5. Expand **Environment Variables** and add:
    | Key | Value |
    |---|---|
-   | `VITE_DONATION_API_URL` | `https://foodrescue-donation-service.onrender.com` |
-   | `VITE_REQUEST_API_URL` | `https://foodrescue-request-service.onrender.com` |
-   *(Replace with your actual Render service URLs from Part 1)*
+   | `VITE_DONATION_API_URL` | `https://foodrescue-h3hs.onrender.com` |
+   | `VITE_REQUEST_API_URL` | `https://foodrescue-1-msbm.onrender.com` |
+   *(Use your actual deployed Render service URLs)*
 6. Click **Deploy**.
-7. Vercel will install dependencies, build the assets, and deploy to a URL like:
-   `https://foodrescue-frontend.vercel.app`
+7. Vercel will install dependencies, build the assets, and deploy to your frontend URL.
 
 ---
 
@@ -150,7 +149,7 @@ Once deployed, verify the endpoints in your browser or with curl:
 
 ### 1. Service 1 Health Check
 ```bash
-curl https://foodrescue-donation-service.onrender.com/health
+curl https://foodrescue-h3hs.onrender.com/health
 ```
 **Expected Response:**
 ```json
@@ -163,7 +162,7 @@ curl https://foodrescue-donation-service.onrender.com/health
 
 ### 2. Service 2 Health Check
 ```bash
-curl https://foodrescue-request-service.onrender.com/health
+curl https://foodrescue-1-msbm.onrender.com/health
 ```
 **Expected Response:**
 ```json

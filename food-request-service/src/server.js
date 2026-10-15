@@ -41,6 +41,8 @@ app.get("/", (req, res) => {
     });
 });
 
+const { getDonationServiceUrls } = require("./controllers/requestController");
+
 app.get("/health", (req, res) => {
     const isConnected = mongoose.connection.readyState === 1;
     res.status(isConnected ? 200 : 503).json({
@@ -48,6 +50,7 @@ app.get("/health", (req, res) => {
         status: isConnected ? "healthy" : "unhealthy",
         port: Number(process.env.PORT) || 5002,
         database: isConnected ? "connected" : "disconnected",
+        donationServiceTargets: getDonationServiceUrls(),
         uptimeSeconds: Math.floor(process.uptime()),
         timestamp: new Date().toISOString()
     });

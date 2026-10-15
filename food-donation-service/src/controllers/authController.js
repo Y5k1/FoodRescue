@@ -146,19 +146,16 @@ exports.login = async (req, res, next) => {
             });
         }
 
-        // If user specified role during login tab, check or inform
-        if (role && role !== user.role) {
-            return res.status(403).json({
-                success: false,
-                message: `This account is registered as a '${user.role}'. Please select the '${user.role === "supplier" ? "Food Supplier" : "Food Requester"}' portal.`
-            });
-        }
+        // If user specified role during login tab that differs from account, adapt seamlessly
+        const roleNotice = (role && role !== user.role)
+            ? `Signed in to your registered ${user.role === "supplier" ? "Food Supplier" : "Food Requester"} portal.`
+            : "Login successful";
 
         const token = generateToken(user);
 
         res.status(200).json({
             success: true,
-            message: "Login successful",
+            message: roleNotice,
             token,
             user: {
                 id: user._id,

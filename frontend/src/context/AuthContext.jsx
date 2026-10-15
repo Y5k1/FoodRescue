@@ -15,10 +15,21 @@ export const AuthProvider = ({ children }) => {
                     const freshUser = await authService.getMe();
                     setUser(freshUser);
                 } catch (err) {
-                    console.warn("Session expired or invalid:", err.message);
-                    authService.logout();
-                    setUser(null);
-                    setToken(null);
+                    console.warn("Session verification warning:", err.message);
+                    // Only log out if the backend explicitly rejected the token as invalid or expired (401 or 403)
+                    // Never log out on network timeouts (e.g. Render spin-up) or transient 5xx errors
+                    if (err.response && (err.response.status === 401 || err.response.status === 403)) {
+                        console.warn("Session expired or invalid: logging out");
+                        authService.logout();
+                        setUser(null);
+                        setToken(null);
+                    } else {
+                        // Preserves existing local session when backend is spinning up
+                        const cachedUser = authService.getCurrentUser();
+                        if (cachedUser) {
+                            setUser(cachedUser);
+                        }
+                    }
                 }
             }
             setLoading(false);
