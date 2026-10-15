@@ -26,16 +26,9 @@ const foodRequestSchema = new mongoose.Schema(
         },
         foodCategory: {
             type: String,
-            enum: [
-                "Cooked Food",
-                "Fruits",
-                "Vegetables",
-                "Bakery",
-                "Packaged Food",
-                "Other"
-            ],
             required: [true, "Food category is required"],
-            default: "Cooked Food"
+            default: "Cooked Food",
+            trim: true
         },
         quantity: {
             type: Number,
@@ -44,9 +37,9 @@ const foodRequestSchema = new mongoose.Schema(
         },
         unit: {
             type: String,
-            enum: ["Meals", "Kg", "Packets", "Items"],
             required: [true, "Unit is required"],
-            default: "Meals"
+            default: "Meals",
+            trim: true
         },
         requesterId: {
             type: String,
@@ -109,16 +102,8 @@ const foodRequestSchema = new mongoose.Schema(
         },
         dietPreference: {
             type: String,
-            enum: [
-                "Any / No Preference",
-                "Vegetarian",
-                "Vegan",
-                "Non-Veg",
-                "Halal",
-                "Bakery",
-                "Other"
-            ],
-            default: "Any / No Preference"
+            default: "Any / No Preference",
+            trim: true
         },
         maxDistanceKm: {
             type: Number,

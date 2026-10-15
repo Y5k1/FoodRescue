@@ -10,13 +10,13 @@ const donationSchema = new mongoose.Schema(
         category: {
             type: String,
             required: [true, "Food category is required"],
-            enum: ["Cooked Food", "Fruits", "Vegetables", "Bakery", "Packaged Food", "Other"],
-            default: "Cooked Food"
+            default: "Cooked Food",
+            trim: true
         },
         dietaryTag: {
             type: String,
-            enum: ["Vegetarian", "Vegan", "Non-Vegetarian", "Halal", "Bakery", "Packaged Food", "Other"],
-            default: "Vegetarian"
+            default: "Vegetarian",
+            trim: true
         },
         donorType: {
             type: String,

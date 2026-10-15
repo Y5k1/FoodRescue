@@ -109,25 +109,24 @@ export const DonationModal = () => {
 
                 {/* Form */}
                 <form onSubmit={handleSubmit} id="post-donation-form">
-                    {/* Donor Name */}
-                    <div className="form-group">
-                        <label className="form-label" htmlFor="donorName">
-                            Donor Name / Organization
-                        </label>
-                        <input
-                            id="donorName"
-                            name="donorName"
-                            type="text"
-                            required
-                            className="form-input"
-                            value={formData.donorName}
-                            onChange={handleChange}
-                            placeholder="e.g., Campus Canteen Building A"
-                        />
-                    </div>
-
-                    {/* Donor Type & Dietary Tag */}
+                    {/* Donor Name & Donor Type */}
                     <div className="form-grid-2">
+                        <div className="form-group">
+                            <label className="form-label" htmlFor="donorName">
+                                Donor Name / Organization
+                            </label>
+                            <input
+                                id="donorName"
+                                name="donorName"
+                                type="text"
+                                required
+                                className="form-input"
+                                value={formData.donorName}
+                                onChange={handleChange}
+                                placeholder="e.g., Campus Canteen Building A"
+                            />
+                        </div>
+
                         <div className="form-group">
                             <label className="form-label" htmlFor="donorType">
                                 Donor Type
@@ -146,6 +145,29 @@ export const DonationModal = () => {
                                 <option value="Hotel">Hotel</option>
                                 <option value="Catering">Catering</option>
                                 <option value="Individual Donor">Individual Donor</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {/* Food Category & Dietary Tag */}
+                    <div className="form-grid-2">
+                        <div className="form-group">
+                            <label className="form-label" htmlFor="category">
+                                Food Category
+                            </label>
+                            <select
+                                id="category"
+                                name="category"
+                                className="form-select"
+                                value={formData.category}
+                                onChange={handleChange}
+                            >
+                                <option value="Cooked Food">Cooked Food</option>
+                                <option value="Packaged Food">Packaged Food</option>
+                                <option value="Bakery">Bakery</option>
+                                <option value="Fruits">Fruits</option>
+                                <option value="Vegetables">Vegetables</option>
                                 <option value="Other">Other</option>
                             </select>
                         </div>
